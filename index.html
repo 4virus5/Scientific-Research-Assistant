@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Scientific Research Assistant Chat</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background: #eef2f7;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .container {
+      flex: 1;
+      max-width: 800px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .message {
+      max-width: 70%;
+      padding: 10px 15px;
+      border-radius: 20px;
+      animation: fadeIn 0.5s ease;
+      word-wrap: break-word;
+    }
+
+    .user {
+      align-self: flex-end;
+      background-color: #dcf8c6;
+      color: #333;
+    }
+
+    .bot {
+      align-self: flex-start;
+      background-color: #e3f2fd;
+      color: #333;
+    }
+
+    .input-area {
+      display: flex;
+      margin-top: 15px;
+      gap: 10px;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 25px;
+      border: 1px solid #ccc;
+      outline: none;
+      transition: 0.3s;
+    }
+
+    input[type="text"]:focus {
+      border-color: #4CAF50;
+    }
+
+    button {
+      padding: 12px 20px;
+      background-color: #4CAF50;
+      border: none;
+      border-radius: 25px;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>🔬 Scientific Research Assistant</h1>
+    <div id="messages" class="messages"></div>
+
+    <div class="input-area">
+      <input type="text" id="query" placeholder="Enter your research topic..." onkeypress="handleKeyPress(event)">
+      <button onclick="searchResearch()">Send</button>
+    </div>
+  </div>
+
+  <script>
+    const API_KEY = 'AIzaSyBUW9SEMllCQm-VDiZ_DQruzGk600yJ9KA';
+    const SEARCH_ENGINE_ID = '45365cdefeea64779';
+
+    function addMessage(text, type) {
+      const messagesDiv = document.getElementById('messages');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${type}`;
+      messageDiv.innerHTML = text;
+      messagesDiv.appendChild(messageDiv);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll
+    }
+
+    async function searchResearch() {
+      const queryInput = document.getElementById('query');
+      const query = queryInput.value.trim();
+
+      if (!query) return;
+
+      addMessage(query, 'user');
+      queryInput.value = '';
+
+      addMessage('Assistant is typing...', 'bot');
+      const typingMessage = document.querySelector('.bot:last-child');
+
+      try {
+        const url = `https://www.googleapis.com/customsearch/v1?key=${API_KEY}&cx=${SEARCH_ENGINE_ID}&q=${encodeURIComponent(query)}`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        typingMessage.remove();
+
+        if (data.error) {
+          addMessage(`Error: ${data.error.message}`, 'bot');
+          console.error('API Error:', data.error);
+          return;
+        }
+
+        if (!data.items || data.items.length === 0) {
+          addMessage('No results found. Try another topic.', 'bot');
+          return;
+        }
+
+        data.items.forEach(item => {
+          const resultHTML = `<strong><a href="${item.link}" target="_blank">${item.title}</a></strong><br>${item.snippet}`;
+          addMessage(resultHTML, 'bot');
+        });
+      } catch (error) {
+        typingMessage.remove();
+        console.error('Error fetching search results:', error);
+        addMessage('Something went wrong. Please try again later.', 'bot');
+      }
+    }
+
+    function handleKeyPress(event) {
+      if (event.key === 'Enter') {
+        searchResearch();
+      }
+    }
+  </script>
+</body>
+</html>
